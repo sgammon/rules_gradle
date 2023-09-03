@@ -1,0 +1,43 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%cyan(%d{HH:mm:ss.SSS}) %highlight(%6level) %boldWhite(%logger) - %white(%msg) %n</pattern>
+        </encoder>
+    </appender>
+
+    <property name="APPENDER" value="${log.file.root:-ASYNC_LAZY}" />
+    <property name="ROOT_LOGLEVEL" value="${elide.logging.root.level:-warn}" />
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <immediateFlush>false</immediateFlush>
+        <encoder>
+            <pattern>%cyan(%d{HH:mm:ss.SSS}) %highlight(%6level) %boldWhite(%logger) - %white(%msg) %n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_LAZY" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator>
+            <key>codesource</key>
+            <defaultValue>user</defaultValue>
+        </discriminator>
+        <sift>
+            <appender name="CONSOLE_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+                <discardingThreshold>20</discardingThreshold>
+                <appender-ref ref="CONSOLE" />
+                <queueSize>256</queueSize>
+                <includeCallerData>false</includeCallerData>
+                <neverBlock>true</neverBlock>
+            </appender>
+        </sift>
+    </appender>
+
+    <!-- RPC Services -->
+    <logger name="gradle" level="info" />
+
+    <root level="info">
+        <appender-ref ref="${APPENDER:-ASYNC_LAZY}" />
+    </root>
+</configuration>

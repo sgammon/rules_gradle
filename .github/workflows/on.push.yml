@@ -1,0 +1,78 @@
+---
+name: "CI"
+
+"on":
+  ## Events: Pushes on Main
+  push:
+    branches:
+      - main
+    paths:
+      - docs/**/*.*
+      - e2e/**/*.*
+      - gradle/**/*.*
+      - internal/**/*.*
+      - tools/**/*.*
+      - "*.bzl"
+      - "*.bazel"
+
+jobs:
+  dependency-graph:
+    name: "Dependency Graph"
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+      - name: "Setup: Checkout"
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - name: "Report: Dependency Graph"
+        continue-on-error: true
+        uses: advanced-security/maven-dependency-submission-action@c5ad0fd6b977364190852883b46728f25a9617c3 # v3.0.2
+
+  build:
+    name: "Build (${{ matrix.label }})"
+    uses: ./.github/workflows/module.build.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest]
+        main: [true]
+        label: ["Ubuntu"]
+        labs: [false]
+        flags: ["--config=linux"]
+        testlabel: ["Ubuntu"]
+        coverage: [false]
+        include:
+          # Bazel 6
+          - runner: ubuntu-latest
+            label: Ubuntu
+            labs: false
+            main: true
+            coverage: false
+            flags: --config=linux
+            testlabel: Ubuntu
+#          - runner: macos-latest
+#            label: macOS
+#            labs: false
+#            main: true
+#            coverage: true
+#            flags: --config=mac
+#            testlabel: macOS
+#          - runner: windows-2022
+#            label: Windows
+#            labs: false
+#            main: true
+#            coverage: false
+#            flags: --config=windows
+#            testlabel: Windows
+
+    secrets: inherit
+    with:
+      runner: ${{ matrix.runner }}
+      label: ${{ matrix.label }}
+      labs: ${{ matrix.labs }}
+      main: ${{ matrix.main }}
+      flags: ${{ matrix.flags }}
+      coverage: ${{ matrix.coverage }}

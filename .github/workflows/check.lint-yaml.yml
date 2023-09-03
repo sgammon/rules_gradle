@@ -1,0 +1,94 @@
+---
+name: "Lint: YAML"
+
+concurrency:
+  group: lint-yaml-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+"on":
+  ## Check YAML on merge queue insertion
+  merge_group: {}
+
+  ## Check on release
+  release:
+    types: [created]
+
+  ## Check on push to `main` if modified
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/*.yaml"
+      - ".github/workflows/*.yml"
+      - ".bazelci/presubmit.yml"
+      - ".bcr/*.yml"
+
+  ## Check each PR change against `main`
+  pull_request:
+    paths:
+      - ".github/workflows/*.yaml"
+      - ".github/workflows/*.yml"
+      - ".bazelci/presubmit.yml"
+      - ".bcr/*.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ## Task: Lint workflows via Actionlint
+  lint-workflows:
+    name: "Lint: Workflows"
+    uses: elide-dev/build-infra/.github/workflows/check.actions-lint.ci.yml@c54d8227f4bd37839a67ab9cb71fb59a0d197aee
+    permissions:
+      checks: write
+      pull-requests: read
+      id-token: write
+      contents: read
+
+  ## Task: Lint Bazel Central Registry config files
+  lint-bcr-yaml:
+    name: "Lint: BCR"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
+      checks: "write"
+      pull-requests: "read"
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+      - name: "Setup: Checkout"
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - name: "Lint: YAML"
+        uses: karancode/yamllint-github-action@0a904064817924fc6fb449a32f67f25bfacc48ae # master
+        with:
+          yamllint_file_or_dir: ".bcr"
+          yamllint_config_filepath: "./.github/.yamllint.yml"
+        env:
+          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  ## Task: Lint Bazel CI config files
+  lint-bazelci-yaml:
+    name: "Lint: Bazel CI"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
+      checks: "write"
+      pull-requests: "read"
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+      - name: "Setup: Checkout"
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - name: "Lint: YAML"
+        uses: karancode/yamllint-github-action@0a904064817924fc6fb449a32f67f25bfacc48ae # master
+        with:
+          yamllint_file_or_dir: ".bazelci"
+          yamllint_config_filepath: "./.github/.yamllint.yml"
+        env:
+          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}

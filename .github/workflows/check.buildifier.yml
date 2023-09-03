@@ -1,0 +1,43 @@
+---
+name: Buildifier
+
+# Controls when the action will run.
+"on":
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [main]
+    paths:
+      - docs/**/*.*
+      - e2e/**/*.*
+      - gradle/**/*.*
+      - internal/**/*.*
+      - tools/**/*.*
+
+  pull_request:
+    branches: [main]
+    paths:
+      - docs/**/*.*
+      - e2e/**/*.*
+      - gradle/**/*.*
+      - internal/**/*.*
+      - tools/**/*.*
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - name: buildifier
+        continue-on-error: true
+        run: bazel run //.github/workflows:buildifier.check

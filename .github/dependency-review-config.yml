@@ -1,0 +1,3 @@
+license-check: true
+vulnerability-check: true
+fail-on-severity: "low"

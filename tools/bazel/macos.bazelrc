@@ -1,1 +1,1 @@
-build:mac --spawn_strategy=worker,sandboxed,local
+build:macos --spawn_strategy=worker,sandboxed,local

@@ -25,6 +25,7 @@ import %workspace%/tools/bazel/java.bazelrc
 import %workspace%/tools/bazel/windows.bazelrc
 import %workspace%/tools/bazel/linux.bazelrc
 import %workspace%/tools/bazel/macos.bazelrc
+import %workspace%/tools/bazel/remote.bazelrc
 
 common --color=auto
 

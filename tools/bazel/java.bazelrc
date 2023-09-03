@@ -1,10 +1,12 @@
-build --experimental_strict_java_deps=strict
+
 build --explicit_java_test_deps
 
 build --java_language_version=11
 build --java_runtime_version=remotejdk_11
-
 build --extra_toolchains=@graalvm//:sdk
+
+build --experimental_inmemory_jdeps_files
+build --experimental_strict_java_deps=strict
 
 test --verbose_failures
 test --test_output=errors

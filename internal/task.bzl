@@ -29,7 +29,7 @@ def _gradle_task_impl(ctx):
         direct_inputs += ctx.attr.data
 
     if ctx.attr.distribution:
-        transitive_inputs += ctx.attr.distribution
+        direct_inputs += ctx.files.distribution
 
     wrapper = ctx.attr._wrapper.files.to_list()
     direct_inputs += wrapper
@@ -57,6 +57,7 @@ def _gradle_task_impl(ctx):
 
     args.add(ctx.file.build_file.path)
     args.add(ctx.outputs.output_log.path)
+    args.add(ctx.attr.distribution.files.to_list()[0].path)
 
     if ctx.attr.outputs != None and len(ctx.attr.outputs) > 0:
         for out in ctx.attr.outputs:
@@ -128,7 +129,10 @@ _gradle_task_rule = rule(
         "debug": attr.bool(
             default = False,
         ),
-        "distribution": attr.label(allow_files = True),
+        "distribution": attr.label(
+            allow_files = True,
+            default = Label("@gradle//file"),
+        ),
         "data": attr.label_list(allow_files = True),
     },
     fragments = [

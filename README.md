@@ -16,6 +16,8 @@ Use [Gradle](https://gradle.org) from [Bazel](https://bazel.build), with support
 
 - Obtaining outputs built by Gradle from a Bazel build
 - Building with Gradle within Bazel's sandbox
+- Sandboxed Gradle home
+- Bazel-provided distribution of Gradle
 
 ## Installation
 
@@ -99,7 +101,6 @@ Stuff which is coming soon, time and APIs permitting, in rough order of priority
 - Support for Bzlmod
 - Extension to `rules_jvm_external` for easily installing Gradle plugins
 - Stubbed Coursier-resolved repos
-- Hermetic Gradle home
 - Dispatch of Gradle within the Bazel wrapper entrypoint
 - Analysis-time task graph integration (not sure this is even possible)
 - Gradle invocation with no daemon

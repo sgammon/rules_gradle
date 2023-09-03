@@ -4,6 +4,21 @@ GRADLE_WRAPPER = "@rules_gradle//gradle/wrapper"
 GRADLE_TOOL_RUNNER = "@rules_gradle//java:runner"
 JAVA_TOOLCHAIN_TYPE = "@bazel_tools//tools/jdk:runtime_toolchain_type"
 
+_WrapperArgument = struct(
+    PROJECT = "gradle_project",
+    DISTRIBUTION = "gradle_distribution",
+    BUILDFILE = "gradle_build_file",
+    JAVA_HOME = "java_home",
+    LOGFILE = "logfile",
+    OUTPUT = "output",
+)
+
+def _arg(args, argument, value = None):
+    val = argument
+    if value != None:
+        val = "--%s=%s" % (argument, value)
+    args.add(val)
+
 def _gradle_task_impl(ctx):
     """Run a Gradle task and capture a build output."""
 
@@ -19,7 +34,8 @@ def _gradle_task_impl(ctx):
     transitive_inputs = []
 
     # resolve java toolchains
-    transitive_inputs.append(ctx.toolchains[JAVA_TOOLCHAIN_TYPE].java_runtime.files)
+    java = ctx.toolchains[JAVA_TOOLCHAIN_TYPE].java_runtime
+    transitive_inputs.append(java.files)
 
     # resolve project and wrapper inputs
     project = ctx.attr.project.files.to_list()
@@ -40,12 +56,32 @@ def _gradle_task_impl(ctx):
     env = {}
     outputs = []
     args = ctx.actions.args()
-    args.add(project_root)
+
+    # prepare required arguments first
+    _arg(args, _WrapperArgument.PROJECT, project_root)
+    _arg(args, _WrapperArgument.BUILDFILE, ctx.file.build_file.path)
+    _arg(args, _WrapperArgument.LOGFILE, ctx.outputs.output_log.path)
+    _arg(args, _WrapperArgument.DISTRIBUTION, ctx.attr.distribution.files.to_list()[0].path)
+    _arg(args, _WrapperArgument.JAVA_HOME, java.java_home)
 
     # gradle outputs to the `build` directory within the project root
     outputs.append(ctx.actions.declare_directory(
         "build",
     ))
+
+    if ctx.attr.outputs != None and len(ctx.attr.outputs) > 0:
+        for out in ctx.attr.outputs:
+            if not out.startswith("build/"):
+                out = "build/%s" % out
+            outfile = ctx.actions.declare_file(out)
+            outputs.append(outfile)
+            _arg(args, _WrapperArgument.OUTPUT, "%s=%s" % (out, outfile.path))
+
+    # add each requisite task to the positional arguments list at the end
+    for i in tasklist:
+        args.add(i)
+
+    # write our arguments file, which we will pass to the wrapper
     marker = ctx.actions.declare_file(
         "bazel-gradle-build.args",
     )
@@ -55,26 +91,13 @@ def _gradle_task_impl(ctx):
         is_executable = False,
     )
 
-    args.add(ctx.file.build_file.path)
-    args.add(ctx.outputs.output_log.path)
-    args.add(ctx.attr.distribution.files.to_list()[0].path)
-
-    if ctx.attr.outputs != None and len(ctx.attr.outputs) > 0:
-        for out in ctx.attr.outputs:
-            if not out.startswith("build/"):
-                out = "build/%s" % out
-            outfile = ctx.actions.declare_file(out)
-            outputs.append(outfile)
-            args.add("--output=%s=%s" % (out, outfile.path))
-
-    for i in tasklist:
-        args.add(i)
-
+    # prepare list of inputs for gradle build execution
     inputs = depset(
         direct_inputs,
         transitive = transitive_inputs,
     )
 
+    # run gradle through the wrapper
     ctx.actions.run(
         inputs = inputs,
         outputs = outputs + [ctx.outputs.output_log],

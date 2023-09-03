@@ -1,11 +1,12 @@
 load(
     "@rules_kotlin//kotlin:jvm.bzl",
-    "kt_jvm_library",
+    java_binary = "kt_jvm_binary",
+    java_library = "kt_jvm_library",
 )
 load(
     "@rules_java//java:defs.bzl",
-    "java_binary",
-    "java_library",
+    "java_plugin",
+    pure_java_library = "java_library",
 )
 load(
     "@rules_graalvm//graalvm:defs.bzl",
@@ -28,51 +29,54 @@ DEPS = [
 ]
 
 filegroup(
-    name = "srcs-java",
+    name = "srcs",
     srcs = glob([
         "build/bazel/**/*.java",
-    ]),
-)
-
-filegroup(
-    name = "srcs-kt",
-    srcs = glob([
         "build/bazel/**/*.kt",
     ]),
 )
 
-kt_jvm_library(
-    name = "lib-kt",
-    srcs = [":srcs-kt"],
-    deps = DEPS,
+java_plugin(
+    name = "picocli-processor",
+    generates_api = True,
+    processor_class = "picocli.codegen.aot.graalvm.processor.NativeImageConfigGeneratorProcessor",
+    deps = [maven("info.picocli:picocli-codegen")],
+)
+
+pure_java_library(
+    name = "picocli",
+    exported_plugins = [":picocli-processor"],
+    runtime_deps = [maven("info.picocli:picocli")],
 )
 
 java_library(
-    name = "lib-java",
-    srcs = [":srcs-java"],
-    deps = DEPS + [":lib-kt"],
+    name = "lib",
+    srcs = [":srcs"],
+    deps = DEPS + [
+        ":picocli",
+    ],
 )
 
 java_binary(
     name = "runner",
     main_class = "build.bazel.gradle.GradleRunner",
     visibility = ["//visibility:public"],
-    runtime_deps = [":lib-java"],
+    runtime_deps = [":lib"],
 )
 
 java_binary(
     name = "wrapper",
-    classpath_resources = [":logback.xml"],
     main_class = "build.bazel.gradle.GradleW",
+    resources = [":logback.xml"],
     visibility = ["//visibility:public"],
-    runtime_deps = [":lib-java"] + DEPS,
+    runtime_deps = [":lib"] + DEPS,
 )
 
 native_image(
     name = "native",
     main_class = "build.bazel.gradle.GradleRunner",
     visibility = ["//visibility:public"],
-    deps = [":lib-java"],
+    deps = [":lib"],
 )
 
 alias(

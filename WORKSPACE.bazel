@@ -104,6 +104,15 @@ http_archive(
 )
 
 http_archive(
+    name = "gazelle",
+    sha256 = "727f3e4edd96ea20c29e8c2ca9e8d2af724d8c7778e7923a854b2c80952bc405",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.30.0/bazel-gazelle-v0.30.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.30.0/bazel-gazelle-v0.30.0.tar.gz",
+    ],
+)
+
+http_archive(
     name = "rules_kotlin",
     sha256 = RULES_KOTLIN_SHA,
     strip_prefix = "rules_kotlin-%s" % RULES_KOTLIN_VERSION,
@@ -226,6 +235,10 @@ load("@googleapis//:repository_rules.bzl", "switched_rules_by_language")
 switched_rules_by_language(
     name = "com_google_googleapis_imports",
 )
+
+load("@gazelle//:deps.bzl", "gazelle_dependencies")
+
+gazelle_dependencies()
 
 # - JavaScript
 

@@ -29,13 +29,8 @@ object GradleTool {
         )
     }
 
-    @JvmStatic fun mountOutputs(
-        projectRoot: String,
-        logFilePath: String,
-        outputs: List<Array<String>>,
-    ) {
+    @JvmStatic fun mountOutputs(root: Path, logFilePath: Path, outputs: List<GradleRunner.MappedOutput>) {
         val cwd = Path(System.getProperty("user.dir"))
-        val root = Path(projectRoot)
         val logFile = root.resolve(logFilePath)
         val outBase = logFile.parent
 
@@ -47,8 +42,8 @@ object GradleTool {
         )
 
         outputs.map {
-            val artifact = it[0]
-            val relativeTarget = it[1]
+            val artifact = it.source
+            val relativeTarget = it.target
             val (source, target) = outputTarget(root, artifact, relativeTarget)
             logging.info("Checking output ${cwd}/$artifact (target: $target)")
 

@@ -34,8 +34,8 @@
         </sift>
     </appender>
 
-    <!-- RPC Services -->
     <logger name="gradle" level="info" />
+    <logger name="build.bazel.gradle.GradleRunner" level="off" />
 
     <root level="info">
         <appender-ref ref="${APPENDER:-ASYNC_LAZY}" />

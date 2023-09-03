@@ -8,20 +8,128 @@ import org.gradle.tooling.ProgressListener;
 import org.gradle.tooling.ProjectConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
+import picocli.CommandLine;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.stream.Collectors;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 
-public class GradleRunner {
+@CommandLine.Command(
+    name = "gradlew",
+    version = "bazel-gradle-wrapper 1.0",
+    mixinStandardHelpOptions = true,
+    showAtFileInUsageHelp = true,
+    description = "Wraps an invocation of Gradle from Bazel"
+)
+public class GradleRunner implements Callable<Integer> {
+    static { System.setProperty("logback.configurationFile", "/java/logback.xml"); }
+
+    public static class MappedOutput {
+        private final String source;
+        private final String target;
+
+        private MappedOutput(String source, String target) {
+            this.source = source;
+            this.target = target;
+        }
+
+        static MappedOutput of(String source, String target) {
+            return new MappedOutput(source, target);
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public String getTarget() {
+            return target;
+        }
+    }
+
+    static class OutputFileMapConverter implements CommandLine.ITypeConverter<MappedOutput> {
+        @Override
+        public MappedOutput convert(String subject) {
+            if (!subject.contains("=")) {
+                throw new IllegalArgumentException("Cannot map --output without target (separated with `=`)");
+            }
+            String[] portions = subject.split("=");
+            if (portions.length != 2) {
+                throw new IllegalArgumentException("Too many `=` in `--output`");
+            }
+            return MappedOutput.of(
+                portions[0],
+                portions[1]
+            );
+        }
+    }
+
     private static Logger logging = LoggerFactory.getLogger(GradleRunner.class);
+
+    private static AtomicReference<List<String>> allArgs = new AtomicReference<>();
+
+    @CommandLine.Option(
+        names = { "--java_home" },
+        required = false,
+        description = "Java Home to use for the Gradle build; if not provided, defaults to current JVM."
+    )
+    private String javaHome = System.getProperty("java.home");
+
+    @CommandLine.Option(
+        names = { "--gradle_distribution" },
+        required = true,
+        description = "Path to a Gradle distribution tarball to use for this build."
+    )
+    private File gradleDistribution;
+
+    @CommandLine.Option(
+        names = { "--gradle_project" },
+        required = true,
+        description = "Path to the root of the Gradle project."
+    )
+    private Path gradleProject;
+
+    @CommandLine.Option(
+        names = { "--gradle_build_file" },
+        required = true,
+        description = "Relative path to the specific build file to run; defaults to `build.gradle.kts`."
+    )
+    private String gradleBuildFile = "build.gradle.kts";
+
+    @CommandLine.Option(
+        names = { "--logfile" },
+        required = true,
+        description = "Path to the log file to write build output to."
+    )
+    private Path logfilePath;
+
+    @CommandLine.Option(
+        names = { "--output" },
+        arity = "1..N",
+        required = true,
+        converter = OutputFileMapConverter.class,
+        description = "One or more mapped outputs in the form `source=dest`; each source is copied to `dest`."
+    )
+    private List<MappedOutput> mappedOutputsList;
+
+    @CommandLine.Parameters(
+        paramLabel = "TASK",
+        description = "one or more Gradle tasks to run"
+    )
+    List<String> tasks = new ArrayList<>();
+
+    private static void boot() {
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+    }
 
     private static File getGradleUserHome(File outDir) {
         return new File(outDir, "_home");
@@ -52,63 +160,59 @@ public class GradleRunner {
     private static void createInitScript(File initScript, File repoDir) throws IOException {
         String content =
                 "allprojects {\n"
-                        + "  buildscript {\n"
-                        + "    repositories {\n"
-                        + "       maven { url '"
-                        + repoDir.toURI().toString()
-                        + "'}\n"
-                        + "    }\n"
-                        + "  }\n"
-                        + "  repositories {\n"
-                        + "    maven {\n"
-                        + "      url '"
-                        + repoDir.toURI().toString()
-                        + "'\n"
-                        + "      metadataSources {\n"
-                        + "        mavenPom()\n"
-                        + "        artifact()\n"
-                        + "      }\n"
-                        + "    }\n"
-                        + "  }\n"
-                        + "}\n"
-                        + "rootProject {\n"
-                        + "    task cleanLocalCaches(type: Delete) {\n"
-                        + "       delete fileTree(gradle.gradleUserHomeDir.toString() + '/caches/transforms-2') { "
-                        + "           exclude '*.lock'\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}\n";
+                + "  buildscript {\n"
+                + "    repositories {\n"
+                + "       maven { url '"
+                + repoDir.toURI()
+                + "'}\n"
+                + "    }\n"
+                + "  }\n"
+                + "  repositories {\n"
+                + "    maven {\n"
+                + "      url '"
+                + repoDir.toURI()
+                + "'\n"
+                + "      metadataSources {\n"
+                + "        mavenPom()\n"
+                + "        artifact()\n"
+                + "      }\n"
+                + "    }\n"
+                + "  }\n"
+                + "}\n"
+                + "rootProject {\n"
+                + "    task cleanLocalCaches(type: Delete) {\n"
+                + "       delete fileTree(gradle.gradleUserHomeDir.toString() + '/caches/transforms-2') { "
+                + "           exclude '*.lock'\n"
+                + "        }\n"
+                + "    }\n"
+                + "}\n";
         try (FileWriter writer = new FileWriter(initScript)) {
             writer.write(content);
         }
     }
 
-    public static void main(String args[]) throws IOException {
-        if (args.length < 5) {
-            System.out.println("usage: java -jar gradlerunner.jar <gradle-root> <build-file> <output-log> <distribution> [--output=file/path] <tasks>");
-            System.exit(1);
-            return;
+    public static void main(String[] args) throws IOException {
+        String[] effective = args;
+        if (args.length < 1) {
+            effective = new String[]{"--help"};
         }
-        // project_root
-        // ctx.file.build_file.path
-        // ctx.outputs.output_log.path
-        // ctx.attr.distribution
-        // --output=<outputs>
-        // <tasks>
-        List<String> allArgs = Arrays.asList(args);
-        final String root = allArgs.get(0);
-        final String buildfile = allArgs.get(1);
-        final String logfile = allArgs.get(2);
-        final File distribution = new File(allArgs.get(3));
-        List<String[]> outputs = allArgs.stream().filter((i) -> i.startsWith("--output=")).map(
-            (i) -> i.replace("--output=", "")
-        ).map(
-            (i) -> i.split("=")
-        ).collect(
-            Collectors.toList()
-        );
-        Path logFile = Paths.get(logfile);
-        List<String> taskList = allArgs.subList(4 + outputs.size(), allArgs.size() - 1);
+
+        // static init
+        boot();
+        GradleRunner.allArgs.set(Arrays.asList(effective));
+        int exitCode = new CommandLine(new GradleRunner()).execute(effective);
+        System.exit(exitCode);
+    }
+
+    @Override
+    public Integer call() throws Exception {
+        final Path root = gradleProject;
+        final Path logfile = logfilePath;
+        final File distribution = gradleDistribution;
+        List<MappedOutput> outputs = mappedOutputsList;
+        List<String> taskList = tasks;
+        File javaHomeDir = Paths.get(javaHome).toRealPath().toAbsolutePath().toFile();
+
         ArrayList<String> taskArgs = new ArrayList<>(taskList.size());
         taskArgs.addAll(taskList);
 
@@ -117,8 +221,7 @@ public class GradleRunner {
             taskArgs.add("build");
         }
         logging.debug("Gradle tool root: " + root);
-        Path path = Path.of(root);
-        File base = logFile.toFile().getParentFile();
+        File base = logfile.toFile().getParentFile();
         File homeDir = getGradleUserHome(base).getAbsoluteFile();
         Path tmpLocalMaven = getLocalMavenRepo(base);
 
@@ -141,25 +244,24 @@ public class GradleRunner {
         System.setProperty("gradle.user.home", "");
 
         try {
-            if (!Files.exists(path) || !Files.isReadable(path)) {
-                logging.error("could not find gradle tool root or can't read");
-                System.exit(1);
-                return;
+            if (!Files.exists(root) || !Files.isReadable(root)) {
+                logging.error("Could not find gradle tool root or can't read");
+                return 1;
             }
 
-            logging.info(
-                "ALL ARGS: " + Joiner.on(" ").join(allArgs)
+            logging.debug(
+                "All wrapper arguments: " + Joiner.on(" ").join(GradleRunner.allArgs.get())
             );
 
-            logging.info(
+            logging.debug(
                 "Launching Gradle embedded build (tasks: \"" + String.join("\", \"", taskArgs) + "\")"
             );
 
             try (ProjectConnection connection = GradleConnector.newConnector()
-                    .forProjectDirectory(path.toFile())
+                    .forProjectDirectory(root.toFile())
                     .useDistribution(distribution.toURI())
                     .useGradleUserHomeDir(homeDir)
-                    .connect(); OutputStream log = new BufferedOutputStream(Files.newOutputStream(logFile))) {
+                    .connect(); OutputStream log = new BufferedOutputStream(Files.newOutputStream(logfile))) {
 
                 OutputStream out = new TeeOutputStream(System.out, log);
                 OutputStream err = new TeeOutputStream(System.err, log);
@@ -168,13 +270,15 @@ public class GradleRunner {
                         .forTasks(taskArgs.toArray(new String[0]))
                         .setEnvironmentVariables(env)
                         .setColorOutput(true)
+                        .setJavaHome(javaHomeDir)
                         .withArguments(arguments)
                         .setStandardInput(System.in)
                         .setStandardOutput(out)
                         .setStandardError(err)
                         .addProgressListener((ProgressListener) progressEvent ->
-                                logging.info("Gradle status: " + progressEvent.getDescription())
-                        ).run();
+                            logging.debug("Gradle status: " + progressEvent.getDescription())
+                        )
+                        .run();
 
                 GradleTool.mountOutputs(
                     root,
@@ -182,14 +286,13 @@ public class GradleRunner {
                     outputs
                 );
             }
-
-            System.exit(0);
+            return 0;
         } catch (RuntimeException e) {
-            logging.error("could not find gradle tool root (error)", e);
+            logging.error("Could not find Gradle tool root (error)", e);
             // print cwd
             logging.error("Current working directory: " + System.getProperty("user.dir"));
-            Files.list(path).forEach(path1 -> logging.error("Path:  " + path1));
-            System.exit(1);
+            Files.list(root).forEach(path1 -> logging.error("Path:  " + path1));
+            return 1;
         }
     }
 }

@@ -21,3 +21,12 @@ gradle_task(
     ],
     project = ":files",
 )
+
+gradle_task(
+    name = "project-native",
+    outputs = [
+        "libs/sample-project.jar",
+    ],
+    project = ":files",
+    runner = "//java:native",
+)

@@ -1,7 +1,15 @@
 load(
     "@rules_kotlin//kotlin:jvm.bzl",
-    java_binary = "kt_jvm_binary",
-    java_library = "kt_jvm_library",
+    "kt_jvm_library",
+)
+load(
+    "@rules_java//java:defs.bzl",
+    "java_binary",
+    "java_library",
+)
+load(
+    "@rules_graalvm//graalvm:defs.bzl",
+    "native_image",
 )
 load(
     "//tools/defs/java:deps.bzl",
@@ -20,37 +28,55 @@ DEPS = [
 ]
 
 filegroup(
-    name = "srcs",
+    name = "srcs-java",
     srcs = glob([
         "build/bazel/**/*.java",
+    ]),
+)
+
+filegroup(
+    name = "srcs-kt",
+    srcs = glob([
         "build/bazel/**/*.kt",
     ]),
 )
 
-java_library(
-    name = "lib",
-    srcs = [":srcs"],
+kt_jvm_library(
+    name = "lib-kt",
+    srcs = [":srcs-kt"],
     deps = DEPS,
+)
+
+java_library(
+    name = "lib-java",
+    srcs = [":srcs-java"],
+    deps = DEPS + [":lib-kt"],
 )
 
 java_binary(
     name = "runner",
-    srcs = [":srcs"],
     main_class = "build.bazel.gradle.GradleRunner",
     visibility = ["//visibility:public"],
-    deps = DEPS,
+    runtime_deps = [":lib-java"],
 )
 
 java_binary(
     name = "wrapper",
-    srcs = [":srcs"],
+    classpath_resources = [":logback.xml"],
     main_class = "build.bazel.gradle.GradleW",
     visibility = ["//visibility:public"],
-    deps = DEPS,
+    runtime_deps = [":lib-java"] + DEPS,
+)
+
+native_image(
+    name = "native",
+    main_class = "build.bazel.gradle.GradleRunner",
+    visibility = ["//visibility:public"],
+    deps = [":lib-java"],
 )
 
 alias(
     name = "java",
-    actual = "wrapper",
+    actual = "runner",
     visibility = ["//visibility:public"],
 )

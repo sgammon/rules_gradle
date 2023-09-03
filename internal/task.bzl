@@ -8,7 +8,7 @@ def _gradle_task_impl(ctx):
     """Run a Gradle task and capture a build output."""
 
     # resolve the runner, declare a file to capture run output
-    runner = ctx.attr._runner
+    runner = ctx.attr.runner
     inputs, _, _ = ctx.resolve_command(
         tools = [runner],
     )
@@ -78,7 +78,7 @@ def _gradle_task_impl(ctx):
     ctx.actions.run(
         inputs = inputs,
         outputs = outputs + [ctx.outputs.output_log],
-        executable = ctx.executable._runner,
+        executable = ctx.executable.runner,
         progress_message = "Gradle %s: %s" % (ctx.label, ", ".join(tasklist)),
         mnemonic = "GradleTask",
         arguments = [args],
@@ -86,7 +86,7 @@ def _gradle_task_impl(ctx):
         use_default_shell_env = True,
         toolchain = JAVA_TOOLCHAIN_TYPE,
         tools = [
-            ctx.executable._runner,
+            ctx.executable.runner,
         ],
     )
 
@@ -102,7 +102,7 @@ def _gradle_task_impl(ctx):
 _gradle_task_rule = rule(
     implementation = _gradle_task_impl,
     attrs = {
-        "_runner": attr.label(
+        "runner": attr.label(
             cfg = "exec",
             default = Label(GRADLE_TOOL_RUNNER),
             allow_files = True,

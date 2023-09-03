@@ -134,7 +134,6 @@ public class GradleRunner {
         putIfNotNull(env, "TMP", System.getenv("TMP"));
 
         arguments.add("--offline");
-        arguments.add("--info");
         arguments.add("--init-script");
         arguments.add(initScript.getAbsolutePath());
         arguments.add("-Dmaven.repo.local=" + tmpLocalMaven.toAbsolutePath());

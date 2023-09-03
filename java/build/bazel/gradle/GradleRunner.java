@@ -9,13 +9,11 @@ import org.gradle.tooling.ProjectConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +25,62 @@ public class GradleRunner {
 
     private static File getGradleUserHome(File outDir) {
         return new File(outDir, "_home");
+    }
+
+    public static Path getLocalMavenRepo(File outDir) {
+        return outDir.toPath().resolve("_tmp_local_maven");
+    }
+
+    private static File getRepoDir(File outDir) {
+        return new File(outDir, "_repo");
+    }
+
+    private static File getInitScript(File outDir) {
+        return new File(outDir, "init.script");
+    }
+
+    public static void addRepo(File outDir, File repo) throws IOException {
+        Gradle.unzip(repo, getRepoDir(outDir));
+    }
+
+    private static void putIfNotNull(HashMap<String, String> env, String key, String val) {
+        if (val != null) {
+            env.put(key, val);
+        }
+    }
+
+    private static void createInitScript(File initScript, File repoDir) throws IOException {
+        String content =
+                "allprojects {\n"
+                        + "  buildscript {\n"
+                        + "    repositories {\n"
+                        + "       maven { url '"
+                        + repoDir.toURI().toString()
+                        + "'}\n"
+                        + "    }\n"
+                        + "  }\n"
+                        + "  repositories {\n"
+                        + "    maven {\n"
+                        + "      url '"
+                        + repoDir.toURI().toString()
+                        + "'\n"
+                        + "      metadataSources {\n"
+                        + "        mavenPom()\n"
+                        + "        artifact()\n"
+                        + "      }\n"
+                        + "    }\n"
+                        + "  }\n"
+                        + "}\n"
+                        + "rootProject {\n"
+                        + "    task cleanLocalCaches(type: Delete) {\n"
+                        + "       delete fileTree(gradle.gradleUserHomeDir.toString() + '/caches/transforms-2') { "
+                        + "           exclude '*.lock'\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}\n";
+        try (FileWriter writer = new FileWriter(initScript)) {
+            writer.write(content);
+        }
     }
 
     public static void main(String args[]) throws IOException {
@@ -64,7 +118,28 @@ public class GradleRunner {
         }
         logging.debug("Gradle tool root: " + root);
         Path path = Path.of(root);
-        File homeDir = getGradleUserHome(logFile.toFile().getParentFile()).getAbsoluteFile();
+        File base = logFile.toFile().getParentFile();
+        File homeDir = getGradleUserHome(base).getAbsoluteFile();
+        Path tmpLocalMaven = getLocalMavenRepo(base);
+
+        File repoDir = getRepoDir(base).getAbsoluteFile();
+        File initScript = getInitScript(base).getAbsoluteFile();
+        createInitScript(initScript, repoDir);
+
+        HashMap<String, String> env = new HashMap<>();
+        List<String> arguments = new ArrayList<>();
+
+        putIfNotNull(env, "SystemRoot", System.getenv("SystemRoot"));
+        putIfNotNull(env, "TEMP", System.getenv("TEMP"));
+        putIfNotNull(env, "TMP", System.getenv("TMP"));
+
+        arguments.add("--offline");
+        arguments.add("--info");
+        arguments.add("--init-script");
+        arguments.add(initScript.getAbsolutePath());
+        arguments.add("-Dmaven.repo.local=" + tmpLocalMaven.toAbsolutePath());
+        // Workaround for issue https://github.com/gradle/gradle/issues/5188
+        System.setProperty("gradle.user.home", "");
 
         try {
             if (!Files.exists(path) || !Files.isReadable(path)) {
@@ -92,8 +167,9 @@ public class GradleRunner {
 
                 connection.newBuild()
                         .forTasks(taskArgs.toArray(new String[0]))
+                        .setEnvironmentVariables(env)
                         .setColorOutput(true)
-                        .addArguments("--info")
+                        .withArguments(arguments)
                         .setStandardInput(System.in)
                         .setStandardOutput(out)
                         .setStandardError(err)

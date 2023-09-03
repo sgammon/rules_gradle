@@ -9,6 +9,7 @@ name: "PR"
       - e2e/**/*.*
       - gradle/**/*.*
       - internal/**/*.*
+      - java/**/*.*
       - tools/**/*.*
 
   ## Run on PR queue check requests

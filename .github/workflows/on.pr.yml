@@ -60,7 +60,7 @@ jobs:
       fail-fast: false
       matrix:
         runner: [ubuntu-latest]
-        main: [true]
+        main: [false]
         label: ["Ubuntu"]
         labs: [false]
         flags: ["--config=linux"]
@@ -71,15 +71,15 @@ jobs:
           - runner: ubuntu-latest
             label: Ubuntu
             labs: false
-            main: true
+            main: false
             coverage: false
             flags: --config=linux
-#          - runner: macos-latest
-#            label: macOS
-#            labs: false
-#            main: true
-#            coverage: true
-#            flags: --config=mac
+          - runner: macos-latest
+            label: macOS
+            labs: false
+            main: false
+            coverage: false
+            flags: --config=macos
 #          - runner: windows-2022
 #            label: Windows
 #            labs: false

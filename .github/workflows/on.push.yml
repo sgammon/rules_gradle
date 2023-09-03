@@ -53,13 +53,13 @@ jobs:
             coverage: false
             flags: --config=linux
             testlabel: Ubuntu
-#          - runner: macos-latest
-#            label: macOS
-#            labs: false
-#            main: true
-#            coverage: true
-#            flags: --config=mac
-#            testlabel: macOS
+          - runner: macos-latest
+            label: macOS
+            labs: false
+            main: true
+            coverage: true
+            flags: --config=macos
+            testlabel: macOS
 #          - runner: windows-2022
 #            label: Windows
 #            labs: false

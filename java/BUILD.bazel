@@ -9,10 +9,13 @@ load(
 )
 
 DEPS = [
+    maven("ch.qos.logback:logback-core"),
+    maven("ch.qos.logback:logback-classic"),
     maven("com.google.guava:guava"),
+    maven("info.picocli:picocli"),
     maven("org.gradle:gradle-tooling-api"),
     maven("org.slf4j:slf4j-api"),
-    maven("org.slf4j:slf4j-simple"),
+    maven("org.slf4j:jul-to-slf4j"),
     maven("org.jetbrains.kotlin:kotlin-stdlib"),
 ]
 

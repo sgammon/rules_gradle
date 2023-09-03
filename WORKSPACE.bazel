@@ -10,7 +10,9 @@ load(
     "GRADLE_VERSION",
     "GUAVA_VERSION",
     "KOTLIN_VERSION",
+    "LOGBACK_VERSION",
     "NODE_VERSION",
+    "PICOCLI_VERSION",
     "PROTOBUF_SHA",
     "PROTOBUF_VERSION",
     "RULES_JVM_EXTERNAL_SHA",
@@ -319,9 +321,19 @@ maven_install(
             version = SLF4J_VERSION,
         ),
         maven.artifact(
-            artifact = "slf4j-simple",
+            artifact = "logback-core",
+            group = "ch.qos.logback",
+            version = LOGBACK_VERSION,
+        ),
+        maven.artifact(
+            artifact = "logback-classic",
+            group = "ch.qos.logback",
+            version = LOGBACK_VERSION,
+        ),
+        maven.artifact(
+            artifact = "jul-to-slf4j",
             group = "org.slf4j",
-            version = SLF4J_VERSION,
+            version = "2.0.7",
         ),
         maven.artifact(
             artifact = "kotlin-stdlib",
@@ -332,6 +344,16 @@ maven_install(
             artifact = "guava",
             group = "com.google.guava",
             version = GUAVA_VERSION,
+        ),
+        maven.artifact(
+            artifact = "picocli",
+            group = "info.picocli",
+            version = PICOCLI_VERSION,
+        ),
+        maven.artifact(
+            artifact = "picocli-codegen",
+            group = "info.picocli",
+            version = PICOCLI_VERSION,
         ),
     ],
     maven_install_json = "@//:maven_install.json",

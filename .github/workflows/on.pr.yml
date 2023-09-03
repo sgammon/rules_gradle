@@ -1,0 +1,97 @@
+---
+name: "PR"
+
+"on":
+  ## Run on PR filings
+  pull_request:
+    paths:
+      - docs/**/*.*
+      - example/**/*.*
+      - gradle/**/*.*
+      - internal/**/*.*
+      - tools/**/*.*
+
+  ## Run on PR queue check requests
+  merge_group: {}
+
+concurrency:
+  # Cancel previous actions from the same PR: https://stackoverflow.com/a/72408109
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-graph:
+    name: "Dependency Graph"
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+      - name: "Setup: Checkout"
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - name: "Report: Dependency Graph"
+        continue-on-error: true
+        uses: advanced-security/maven-dependency-submission-action@c5ad0fd6b977364190852883b46728f25a9617c3 # v3.0.2
+
+  dependency-review:
+    name: "Dependency Review"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit
+      - name: "Checkout Repository"
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - name: "Dependency Review"
+        uses: actions/dependency-review-action@f6fff72a3217f580d5afd49a46826795305b63c7 # v3.0.8
+        with:
+          config-file: "./.github/dependency-review-config.yml"
+
+  test:
+    name: "Tests: ${{ matrix.label }}"
+    uses: ./.github/workflows/module.build.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest]
+        main: [true]
+        label: ["Ubuntu"]
+        labs: [false]
+        flags: ["--config=linux"]
+        testlabel: ["Ubuntu"]
+        coverage: [false]
+        include:
+          # Bazel 7
+          - runner: ubuntu-latest
+            label: Ubuntu
+            labs: false
+            main: true
+            coverage: false
+            flags: --config=linux
+          - runner: macos-latest
+            label: macOS
+            labs: false
+            main: true
+            coverage: true
+            flags: --config=mac
+          - runner: windows-2022
+            label: Windows
+            labs: false
+            main: true
+            coverage: false
+            flags: --config=windows
+
+    secrets: inherit
+    with:
+      runner: ${{ matrix.runner }}
+      label: ${{ matrix.label }}
+      labs: ${{ matrix.labs }}
+      main: ${{ matrix.main }}
+      flags: ${{ matrix.flags }}
+      coverage: ${{ matrix.coverage }}

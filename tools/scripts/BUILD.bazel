@@ -1,0 +1,5 @@
+package(default_visibility = [
+    "@//:__pkg__",
+    "@//tools:__pkg__",
+    "@//tools:__subpackages__",
+])

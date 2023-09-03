@@ -1,0 +1,320 @@
+workspace(name = "rules_gradle")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
+load(
+    "//internal:config.bzl",
+    "GRAALVM_DISTRIBUTION",
+    "GRAALVM_JAVA_VERSION",
+    "GRAALVM_VERSION",
+    "GRADLE_VERSION",
+    "GUAVA_VERSION",
+    "KOTLIN_VERSION",
+    "NODE_VERSION",
+    "PROTOBUF_SHA",
+    "PROTOBUF_VERSION",
+    "RULES_JVM_EXTERNAL_SHA",
+    "RULES_JVM_EXTERNAL_TAG",
+    "RULES_KOTLIN_SHA",
+    "RULES_KOTLIN_VERSION",
+    "SLF4J_VERSION",
+)
+
+http_archive(
+    name = "platforms",
+    sha256 = "3a561c99e7bdbe9173aa653fd579fe849f1d8d67395780ab4770b1f381431d51",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.7/platforms-0.0.7.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/0.0.7/platforms-0.0.7.tar.gz",
+    ],
+)
+
+http_file(
+    name = "gradle",
+    sha256 = "591855b517fc635b9e04de1d05d5e76ada3f89f5fc76f87978d1b245b4f69225",
+    url = "https://dl.less.build/toolchains/gradle/gradle-8.3-bin.zip",
+)
+
+http_archive(
+    name = "rules_graalvm",
+    sha256 = "be69ffbf1e0cdcebce2e7e2491f2c27c61d3cffc106a5ea2f1030cf8297b496e",
+    strip_prefix = "rules_graalvm-167f5c6a96e67921d8d960bac7461fc94f9960ce",
+    url = "https://github.com/sgammon/rules_graalvm/archive/167f5c6a96e67921d8d960bac7461fc94f9960ce/rules_graalvm-167f5c6a96e67921d8d960bac7461fc94f9960ce.tar.gz",
+)
+
+http_archive(
+    name = "bazel_features",
+    sha256 = "9fcb3d7cbe908772462aaa52f02b857a225910d30daa3c252f670e3af6d8036d",
+    strip_prefix = "bazel_features-1.0.0",
+    url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.0.0/bazel_features-v1.0.0.tar.gz",
+)
+
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "rules_java",
+    sha256 = "27abf8d2b26f4572ba4112ae8eb4439513615018e03a299f85a8460f6992f6a3",
+    urls = [
+        "https://github.com/bazelbuild/rules_java/releases/download/6.4.0/rules_java-6.4.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "rules_cc",
+    sha256 = "ae46b722a8b8e9b62170f83bfb040cbf12adb732144e689985a66b26410a7d6f",
+    strip_prefix = "rules_cc-0.0.8",
+    urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.0.8/rules_cc-0.0.8.tar.gz"],
+)
+
+http_archive(
+    name = "rules_kotlin",
+    sha256 = RULES_KOTLIN_SHA,
+    strip_prefix = "rules_kotlin-%s" % RULES_KOTLIN_VERSION,
+    urls = ["https://github.com/bazelbuild/rules_kotlin/archive/%s/%s.tar.gz" % (RULES_KOTLIN_VERSION, RULES_KOTLIN_VERSION)],
+)
+
+http_archive(
+    name = "com_google_protobuf",
+    sha256 = PROTOBUF_SHA,
+    strip_prefix = "protobuf-%s" % PROTOBUF_VERSION,
+    urls = ["https://github.com/protocolbuffers/protobuf/archive/v%s.tar.gz" % PROTOBUF_VERSION],
+)
+
+http_archive(
+    name = "remote_java_tools",
+    sha256 = "942b3d88ebd785a5face38049077a1f8dab5a3500f5ebd0c0df090244acc4e16",
+    urls = [
+        "https://mirror.bazel.build/bazel_java_tools/releases/java/v12.5/java_tools-v12.5.zip",
+        "https://github.com/bazelbuild/java_tools/releases/download/java_v12.5/java_tools-v12.5.zip",
+    ],
+)
+
+http_archive(
+    name = "remote_java_tools_linux",
+    sha256 = "45dda5441b46385e8ec95d3bc4a04b9337a6ff837bb41bdaa6247d8d36edceae",
+    urls = [
+        "https://mirror.bazel.build/bazel_java_tools/releases/java/v12.5/java_tools_linux-v12.5.zip",
+        "https://github.com/bazelbuild/java_tools/releases/download/java_v12.5/java_tools_linux-v12.5.zip",
+    ],
+)
+
+http_archive(
+    name = "remote_java_tools_windows",
+    sha256 = "0b319cf762e256133f8d0f5f99fd7d35ca4cf00f35e7c0e8aea1b9fcd9cf4fb0",
+    urls = [
+        "https://mirror.bazel.build/bazel_java_tools/releases/java/v12.5/java_tools_windows-v12.5.zip",
+        "https://github.com/bazelbuild/java_tools/releases/download/java_v12.5/java_tools_windows-v12.5.zip",
+    ],
+)
+
+http_archive(
+    name = "remote_java_tools_darwin_x86_64",
+    sha256 = "7e96d0310222e9c27e4c87987978c0c59a0acb97cebdbd838ff652a13abbed77",
+    urls = [
+        "https://mirror.bazel.build/bazel_java_tools/releases/java/v12.5/java_tools_darwin_x86_64-v12.5.zip",
+        "https://github.com/bazelbuild/java_tools/releases/download/java_v12.5/java_tools_darwin_x86_64-v12.5.zip",
+    ],
+)
+
+http_archive(
+    name = "remote_java_tools_darwin_arm64",
+    sha256 = "5fb927b24043dd79010b54be31ec5f18b38ee9dbd9fd03d8353232431a7e2392",
+    urls = [
+        "https://mirror.bazel.build/bazel_java_tools/releases/java/v12.5/java_tools_darwin_arm64-v12.5.zip",
+        "https://github.com/bazelbuild/java_tools/releases/download/java_v12.5/java_tools_darwin_arm64-v12.5.zip",
+    ],
+)
+
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "278b7ff5a826f3dc10f04feaf0b70d48b68748ccd512d7f98bf442077f043fe3",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.41.0/rules_go-v0.41.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.41.0/rules_go-v0.41.0.zip",
+    ],
+)
+
+http_archive(
+    name = "bazel_gazelle",
+    sha256 = "29218f8e0cebe583643cbf93cae6f971be8a2484cdcfa1e45057658df8d54002",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.32.0/bazel-gazelle-v0.32.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.32.0/bazel-gazelle-v0.32.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "bazel_skylib_gazelle_plugin",
+    sha256 = "3327005dbc9e49cc39602fb46572525984f7119a9c6ffe5ed69fbe23db7c1560",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-gazelle-plugin-1.4.2.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-gazelle-plugin-1.4.2.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "io_bazel_stardoc",
+    sha256 = "62bd2e60216b7a6fec3ac79341aa201e0956477e7c8f6ccc286f279ad1d96432",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/stardoc/releases/download/0.6.2/stardoc-0.6.2.tar.gz",
+        "https://github.com/bazelbuild/stardoc/releases/download/0.6.2/stardoc-0.6.2.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "rules_jvm_external",
+    sha256 = RULES_JVM_EXTERNAL_SHA,
+    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
+    url = "https://github.com/bazelbuild/rules_jvm_external/releases/download/%s/rules_jvm_external-%s.tar.gz" % (RULES_JVM_EXTERNAL_TAG, RULES_JVM_EXTERNAL_TAG),
+)
+
+http_archive(
+    name = "contrib_rules_jvm",
+    sha256 = "bd0f82def1879df85ff0a80767e6455911e1c9c1eac5db1de8f68dcccd4a3d7a",
+    strip_prefix = "rules_jvm-0.18.0",
+    url = "https://github.com/bazel-contrib/rules_jvm/releases/download/v0.18.0/rules_jvm-v0.18.0.tar.gz",
+)
+
+http_archive(
+    name = "aspect_rules_js",
+    sha256 = "7ab2fbe6d79fb3909ad2bf6dcacfae39adcb31c514efa239dd730b4f147c8097",
+    strip_prefix = "rules_js-1.32.1",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.32.1/rules_js-v1.32.1.tar.gz",
+)
+
+# --------------------------------------------------------------------------------------------------------------
+# Dev Dependencies:
+
+# - JavaScript
+
+load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
+
+rules_js_dependencies()
+
+load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
+
+nodejs_register_toolchains(
+    name = "nodejs",
+    node_version = NODE_VERSION,
+)
+
+load("@aspect_rules_js//npm:repositories.bzl", "npm_translate_lock")
+
+npm_translate_lock(
+    name = "npm",
+    npmrc = "@//:.npmrc",
+    pnpm_lock = "//:pnpm-lock.yaml",
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+
+load("@npm//:repositories.bzl", "npm_repositories")
+
+npm_repositories()
+
+# - GraalVM
+
+#load("@rules_graalvm//graalvm:workspace.bzl", "register_graalvm_toolchains", "rules_graalvm_repositories")
+#
+#rules_graalvm_repositories()
+#
+#register_graalvm_toolchains(register_java_toolchain = False)
+#
+#load("@rules_graalvm//graalvm:repositories.bzl", "graalvm_repository")
+#
+#graalvm_repository(
+#    name = "graalvm",
+#    distribution = GRAALVM_DISTRIBUTION,
+#    java_version = GRAALVM_JAVA_VERSION,
+#    version = GRAALVM_VERSION,
+#)
+
+# - JVM
+
+load("@rules_java//java:repositories.bzl", "rules_java_dependencies", "rules_java_toolchains")
+
+rules_java_dependencies()
+
+rules_java_toolchains()
+
+# - Kotlin
+
+load("@rules_kotlin//kotlin:dependencies.bzl", "kt_download_local_dev_dependencies")
+
+kt_download_local_dev_dependencies()
+
+load("@rules_kotlin//kotlin:repositories.bzl", "kotlin_repositories", "kotlinc_version")
+
+kotlin_repositories(
+    compiler_release = kotlinc_version(
+        release = KOTLIN_VERSION,
+        sha256 = None,
+    ),
+)
+
+register_toolchains("//tools/defs/kt:toolchain")
+
+# - Maven
+
+load("@rules_jvm_external//:repositories.bzl", "rules_jvm_external_deps")
+
+rules_jvm_external_deps()
+
+load("@rules_jvm_external//:setup.bzl", "rules_jvm_external_setup")
+
+rules_jvm_external_setup()
+
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+load("@rules_jvm_external//:specs.bzl", "maven")
+
+maven_install(
+    artifacts = [
+        maven.artifact(
+            artifact = "gradle-tooling-api",
+            group = "org.gradle",
+            version = GRADLE_VERSION,
+        ),
+        maven.artifact(
+            artifact = "slf4j-api",
+            group = "org.slf4j",
+            version = SLF4J_VERSION,
+        ),
+        maven.artifact(
+            artifact = "slf4j-simple",
+            group = "org.slf4j",
+            version = SLF4J_VERSION,
+        ),
+        maven.artifact(
+            artifact = "kotlin-stdlib",
+            group = "org.jetbrains.kotlin",
+            version = KOTLIN_VERSION,
+        ),
+        maven.artifact(
+            artifact = "guava",
+            group = "com.google.guava",
+            version = GUAVA_VERSION,
+        ),
+    ],
+    maven_install_json = "@//:maven_install.json",
+    repositories = [
+        "https://maven.pkg.st",
+        "https://gradle.pkg.st",
+        "https://repo1.maven.org/maven2",
+        "https://repo.gradle.org/gradle/libs-releases",
+    ],
+)
+
+load("@maven//:defs.bzl", "pinned_maven_install")
+
+pinned_maven_install()
+
+# Provide a repository hint for Gazelle to inform it that the go package
+# github.com/bazelbuild/rules_go is available from io_bazel_rules_go and it
+# doesn't need to duplicatively fetch it.
+
+# gazelle:repository go_repository name=io_bazel_rules_go importpath=github.com/bazelbuild/rules_go

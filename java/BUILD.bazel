@@ -1,0 +1,53 @@
+load(
+    "@rules_kotlin//kotlin:jvm.bzl",
+    java_binary = "kt_jvm_binary",
+    java_library = "kt_jvm_library",
+)
+load(
+    "//tools/defs/java:deps.bzl",
+    "maven",
+)
+
+DEPS = [
+    maven("com.google.guava:guava"),
+    maven("org.gradle:gradle-tooling-api"),
+    maven("org.slf4j:slf4j-api"),
+    maven("org.slf4j:slf4j-simple"),
+    maven("org.jetbrains.kotlin:kotlin-stdlib"),
+]
+
+filegroup(
+    name = "srcs",
+    srcs = glob([
+        "build/bazel/**/*.java",
+        "build/bazel/**/*.kt",
+    ]),
+)
+
+java_library(
+    name = "lib",
+    srcs = [":srcs"],
+    deps = DEPS,
+)
+
+java_binary(
+    name = "runner",
+    srcs = [":srcs"],
+    main_class = "build.bazel.gradle.GradleRunner",
+    visibility = ["//visibility:public"],
+    deps = DEPS,
+)
+
+java_binary(
+    name = "wrapper",
+    srcs = [":srcs"],
+    main_class = "build.bazel.gradle.GradleW",
+    visibility = ["//visibility:public"],
+    deps = DEPS,
+)
+
+alias(
+    name = "java",
+    actual = "wrapper",
+    visibility = ["//visibility:public"],
+)

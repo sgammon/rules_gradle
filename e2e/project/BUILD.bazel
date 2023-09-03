@@ -1,0 +1,38 @@
+load(
+    "//gradle:defs.bzl",
+    "gradle_task",
+)
+load(
+    "//internal:task2.bzl",
+    "gradle_build",
+)
+
+# gazelle:exclude src/*
+
+filegroup(
+    name = "files",
+    srcs = [
+        "build.gradle.kts",
+        "settings.gradle.kts",
+        "src/main/java/HelloWorld.java",
+    ],
+)
+
+gradle_task(
+    name = "project",
+    outputs = [
+        "libs/sample-project.jar",
+    ],
+    project = ":files",
+)
+
+gradle_build(
+    name = "sample",
+    build_file = "build.gradle.kts",
+    data = [
+        ":files",
+    ],
+    gradle_version = "8.2",
+    max_workers = 1,
+    output_file = "sample-project.jar",
+)

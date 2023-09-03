@@ -1,0 +1,45 @@
+common:verbose --announce_rc
+
+build --java_language_version=11
+build --java_runtime_version=remotejdk_11
+
+#build --extra_toolchains=@graalvm//:sdk
+
+# build --config=labs
+# build --config=strict
+# build --config=hermetic
+
+# build --enable_bzlmod
+# build --config=bzlmod
+
+# Import Aspect bazelrc presets
+# import %workspace%/.aspect/bazelrc/convenience.bazelrc
+# import %workspace%/.aspect/bazelrc/correctness.bazelrc
+# import %workspace%/.aspect/bazelrc/debug.bazelrc
+# import %workspace%/.aspect/bazelrc/performance.bazelrc
+
+# Import project-level presets
+# import %workspace%/tools/bazel/base.bazelrc
+# import %workspace%/tools/bazel/buildbuddy.bazelrc
+# import %workspace%/tools/bazel/cache.bazelrc
+# import %workspace%/tools/bazel/ci.bazelrc
+# import %workspace%/tools/bazel/bzlmod.bazelrc
+# import %workspace%/tools/bazel/profiles.bazelrc
+# import %workspace%/tools/bazel/dev.bazelrc
+# import %workspace%/tools/bazel/labs.bazelrc
+# import %workspace%/tools/bazel/strict.bazelrc
+# import %workspace%/tools/bazel/hermetic.bazelrc
+# import %workspace%/tools/bazel/java.bazelrc
+# import %workspace%/tools/bazel/windows.bazelrc
+# import %workspace%/tools/bazel/linux.bazelrc
+# import %workspace%/tools/bazel/macos.bazelrc
+
+common --color=auto
+
+build --verbose_failures
+
+# pick something trivial as a "noop"
+common:noop --logging=3
+
+#try-import %workspace%/local.bazelrc
+#try-import %workspace%/version.bazelrc

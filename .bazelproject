@@ -1,0 +1,18 @@
+directories:
+  .
+
+workspace_type: java
+java_language_level: 11
+derive_targets_from_directories: false
+
+targets:
+  //.aspect/...
+  //java/...
+
+test_sources:
+  javatests/*
+
+additional_languages:
+  java
+  kotlin
+

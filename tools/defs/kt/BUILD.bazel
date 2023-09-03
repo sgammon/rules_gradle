@@ -1,0 +1,18 @@
+load(
+    "@rules_kotlin//kotlin:core.bzl",
+    "define_kt_toolchain",
+)
+load(
+    "//internal:config.bzl",
+    "JAVA_LANGUAGE_LEVEL",
+    "KOTLIN_API_VERSION",
+    "KOTLIN_LANGUAGE_VERSION",
+)
+
+
+define_kt_toolchain(
+    name = "toolchain",
+    api_version = KOTLIN_API_VERSION,
+    jvm_target = JAVA_LANGUAGE_LEVEL,
+    language_version = KOTLIN_LANGUAGE_VERSION,
+)

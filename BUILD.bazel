@@ -1,0 +1,20 @@
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@gazelle//:def.bzl", "gazelle")
+
+exports_files([
+    ".npmrc",
+    ".bazelignore",
+    "maven_install.json",
+    "package.json",
+    "pnpm-lock.yaml",
+])
+
+# gazelle:prefix github.com/sgammon/rules_gradle
+
+npm_link_all_packages(name = "node_modules")
+
+gazelle(name = "gazelle")

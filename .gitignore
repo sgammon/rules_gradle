@@ -1,0 +1,5 @@
+bazel-*
+node_modules/
+local.bazelrc
+.DS_Store
+.ijwb

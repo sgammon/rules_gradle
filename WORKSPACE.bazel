@@ -225,12 +225,6 @@ switched_rules_by_language(
     name = "com_google_googleapis_imports",
 )
 
-# - Bazel Toolchains (RBE)
-
-load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
-
-rbe_autoconfig(name = "rbe_default")
-
 # - JavaScript
 
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")

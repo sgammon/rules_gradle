@@ -61,13 +61,13 @@ jobs:
             coverage: false
             flags: --config=macos
             testlabel: macOS
-          - runner: windows-2022
-            label: Windows
-            labs: false
-            main: false
-            coverage: false
-            flags: --config=windows
-            testlabel: Windows
+#          - runner: windows-2022
+#            label: Windows
+#            labs: false
+#            main: false
+#            coverage: false
+#            flags: --config=windows
+#            testlabel: Windows
 
     secrets: inherit
     with:

@@ -99,6 +99,7 @@ INFO: Build completed successfully, 395 total actions
 
 Stuff which is coming soon, time and APIs permitting, in rough order of priority:
 
+- Support for Windows
 - Support for Bzlmod
 - Extension to `rules_jvm_external` for easily installing Gradle plugins
 - Integration between Bazel's Java Toolchain and [Gradle Toolchains](https://docs.gradle.org/current/userguide/toolchains.html)

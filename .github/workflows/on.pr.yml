@@ -81,12 +81,12 @@ jobs:
             main: false
             coverage: false
             flags: --config=macos
-#          - runner: windows-2022
-#            label: Windows
-#            labs: false
-#            main: true
-#            coverage: false
-#            flags: --config=windows
+          - runner: windows-2022
+            label: Windows
+            labs: false
+            main: false
+            coverage: false
+            flags: --config=windows
 
     secrets: inherit
     with:

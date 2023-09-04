@@ -32,7 +32,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file"
 http_archive(
     name = "rules_gradle",
     sha256 = "...",
-    strip_prefix = "ruls_gradle-<revision>",
+    strip_prefix = "rules_gradle-<revision>",
     urls = [
         "https://github.com/sgammon/rules_gradle/archive/<revision>/rules_gradle-<revision>.zip",
     ],
